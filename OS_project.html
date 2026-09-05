@@ -1,0 +1,1707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Disk Scheduling Visualizer</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        font-family: Arial, Helvetica, sans-serif;
+        background: #eef2f7;
+        color: #18202a;
+        min-height: 100vh;
+    }
+
+    /* HEADER */
+    header {
+        background: linear-gradient(135deg, #111827, #1e293b);
+        color: white;
+        padding: 25px 20px;
+        text-align: center;
+        box-shadow: 0 3px 12px rgba(0,0,0,0.2);
+    }
+
+    header h1 {
+        font-size: 30px;
+        margin-bottom: 8px;
+    }
+
+    header p {
+        color: #cbd5e1;
+        font-size: 14px;
+    }
+
+    .container {
+        width: 95%;
+        max-width: 1400px;
+        margin: 25px auto;
+    }
+
+    /* CARD */
+    .card {
+        background: white;
+        border-radius: 12px;
+        padding: 22px;
+        margin-bottom: 20px;
+        box-shadow: 0 3px 12px rgba(15,23,42,0.08);
+    }
+
+    .card h2 {
+        font-size: 20px;
+        margin-bottom: 18px;
+        color: #172554;
+    }
+
+    /* INPUT GRID */
+    .input-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+    }
+
+    .field {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .field label {
+        font-size: 13px;
+        font-weight: bold;
+        margin-bottom: 7px;
+        color: #334155;
+    }
+
+    .field input,
+    .field select {
+        height: 42px;
+        border: 1px solid #cbd5e1;
+        border-radius: 7px;
+        padding: 0 12px;
+        font-size: 14px;
+        outline: none;
+        background: white;
+    }
+
+    .field input:focus,
+    .field select:focus {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+    }
+
+    .button-row {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+
+    button {
+        border: none;
+        border-radius: 7px;
+        padding: 12px 22px;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    button:hover {
+        transform: translateY(-1px);
+        opacity: 0.93;
+    }
+
+    .primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .secondary {
+        background: #475569;
+        color: white;
+    }
+
+    .success {
+        background: #059669;
+        color: white;
+    }
+
+    .warning {
+        background: #d97706;
+        color: white;
+    }
+
+    /* OUTPUT SUMMARY */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+
+    .summary-box {
+        background: #f8fafc;
+        border-radius: 9px;
+        padding: 18px;
+        text-align: center;
+        border: 1px solid #e2e8f0;
+    }
+
+    .summary-box .label {
+        font-size: 12px;
+        color: #64748b;
+        margin-bottom: 8px;
+        font-weight: bold;
+    }
+
+    .summary-box .value {
+        font-size: 22px;
+        font-weight: bold;
+        color: #2563eb;
+    }
+
+    .summary-box.algorithm .value {
+        color: #059669;
+    }
+
+    /* SEQUENCE */
+    .sequence {
+        margin-top: 18px;
+        background: #f8fafc;
+        border-radius: 9px;
+        padding: 18px;
+        text-align: center;
+        font-size: 17px;
+        font-weight: bold;
+        color: #1d4ed8;
+        overflow-x: auto;
+        white-space: nowrap;
+    }
+
+    /* EXPLANATION */
+    .explanation {
+        background: #eff6ff;
+        border-left: 4px solid #2563eb;
+        padding: 18px;
+        border-radius: 7px;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    .explanation strong {
+        color: #1e3a8a;
+    }
+
+    /* VISUALIZATION */
+    .visual-container {
+        position: relative;
+        padding: 55px 30px 70px;
+        overflow-x: auto;
+    }
+
+    .disk-line {
+        position: relative;
+        min-width: 800px;
+        height: 5px;
+        background: #1f2937;
+        margin: 30px 0;
+        border-radius: 5px;
+    }
+
+    .endpoint {
+        position: absolute;
+        top: -25px;
+        font-size: 12px;
+        color: #1d4ed8;
+        font-weight: bold;
+    }
+
+    .endpoint.left {
+        left: 0;
+    }
+
+    .endpoint.right {
+        right: 0;
+    }
+
+    .disk-point {
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        background: #ef4444;
+        border-radius: 50%;
+        top: -5px;
+        transform: translateX(-50%);
+        z-index: 3;
+    }
+
+    .disk-point.start {
+        width: 18px;
+        height: 18px;
+        background: white;
+        border: 3px solid #16a34a;
+        top: -7px;
+    }
+
+    .point-label {
+        position: absolute;
+        top: 16px;
+        transform: translateX(-50%);
+        font-size: 11px;
+        font-weight: bold;
+        color: #111827;
+        white-space: nowrap;
+    }
+
+    /* SVG */
+    #movementSvg {
+        width: 100%;
+        min-width: 800px;
+        height: 300px;
+        border-radius: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* STEP BY STEP */
+    .steps {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .step {
+        display: grid;
+        grid-template-columns: 70px 150px 1fr;
+        padding: 13px;
+        background: #f8fafc;
+        border-radius: 6px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 14px;
+        transition: 0.2s;
+    }
+
+    .step.active {
+        background: #dbeafe;
+        border-left: 4px solid #2563eb;
+    }
+
+    .step-number {
+        font-weight: bold;
+        color: #475569;
+    }
+
+    .movement {
+        font-weight: bold;
+        color: #1d4ed8;
+    }
+
+    .calculation {
+        color: #475569;
+    }
+
+    .total {
+        margin-top: 15px;
+        padding: 15px;
+        background: #ecfdf5;
+        border-radius: 8px;
+        color: #047857;
+        font-size: 17px;
+        font-weight: bold;
+        text-align: right;
+    }
+
+    /* COMPARISON */
+    .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+    }
+
+    .comparison-table th,
+    .comparison-table td {
+        padding: 13px;
+        text-align: center;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .comparison-table th {
+        background: #f1f5f9;
+        color: #334155;
+        font-size: 13px;
+    }
+
+    .comparison-table td {
+        font-size: 14px;
+    }
+
+    .best {
+        background: #ecfdf5;
+        color: #047857;
+        font-weight: bold;
+    }
+
+    .winner {
+        margin-top: 15px;
+        padding: 14px;
+        background: #fef3c7;
+        color: #92400e;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    /* CONTROLS */
+    .animation-controls {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+
+    .progress {
+        flex: 1;
+        min-width: 200px;
+        height: 7px;
+        background: #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        width: 0%;
+        height: 100%;
+        background: #2563eb;
+        transition: width 0.3s;
+    }
+
+    .status {
+        font-size: 13px;
+        color: #64748b;
+        font-weight: bold;
+    }
+
+    /* FOOTER */
+    footer {
+        text-align: center;
+        padding: 25px;
+        color: #64748b;
+        font-size: 13px;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 900px) {
+        .input-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .summary-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 600px) {
+        .input-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        header h1 {
+            font-size: 23px;
+        }
+
+        .step {
+            grid-template-columns: 55px 110px 1fr;
+            font-size: 12px;
+        }
+    }
+
+    @media print {
+        button,
+        .animation-controls {
+            display: none !important;
+        }
+
+        body {
+            background: white;
+        }
+
+        .card {
+            box-shadow: none;
+            border: 1px solid #ddd;
+        }
+    }
+</style>
+</head>
+
+<body>
+
+<header>
+    <h1>Disk Scheduling Visualizer</h1>
+    <p>Interactive visualization and comparison of FCFS, SSTF, LOOK and C-LOOK algorithms</p>
+</header>
+
+<div class="container">
+
+    <!-- INPUT -->
+    <section class="card">
+        <h2>Simulation Input</h2>
+
+        <div class="input-grid">
+
+            <div class="field">
+                <label>Initial Head Position</label>
+                <input type="number" id="head" value="50" min="0">
+            </div>
+
+            <div class="field">
+                <label>Request Queue (comma separated)</label>
+                <input
+                    type="text"
+                    id="queue"
+                    value="82,170,43,140,24,16,190"
+                >
+            </div>
+
+            <div class="field">
+                <label>Disk Size (0 to n-1)</label>
+                <input type="number" id="diskSize" value="200" min="2">
+            </div>
+
+            <div class="field">
+                <label>Algorithm</label>
+                <select id="algorithm">
+                    <option value="FCFS">FCFS</option>
+                    <option value="SSTF" selected>SSTF</option>
+                    <option value="LOOK">LOOK</option>
+                    <option value="CLOOK">C-LOOK</option>
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Direction (LOOK / C-LOOK)</label>
+                <select id="direction">
+                    <option value="right" selected>Towards Higher Cylinders →</option>
+                    <option value="left">Towards Lower Cylinders ←</option>
+                </select>
+            </div>
+
+        </div>
+
+        <div class="button-row">
+            <button class="primary" onclick="startSimulation()">
+                START SIMULATION
+            </button>
+
+            <button class="success" onclick="compareAlgorithms()">
+                COMPARE ALL ALGORITHMS
+            </button>
+
+            <button class="secondary" onclick="resetPage()">
+                RESET
+            </button>
+
+            <button class="warning" onclick="window.print()">
+                PRINT REPORT
+            </button>
+        </div>
+    </section>
+
+
+    <!-- OUTPUT -->
+    <section class="card">
+        <h2>Output</h2>
+
+        <div class="summary-grid">
+
+            <div class="summary-box algorithm">
+                <div class="label">ALGORITHM</div>
+                <div class="value" id="outputAlgorithm">SSTF</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="label">REQUESTS SERVED</div>
+                <div class="value" id="requestsServed">7</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="label">TOTAL HEAD MOVEMENT</div>
+                <div class="value" id="totalMovement">208</div>
+            </div>
+
+            <div class="summary-box">
+                <div class="label">AVERAGE MOVEMENT</div>
+                <div class="value" id="averageMovement">29.71</div>
+            </div>
+
+        </div>
+
+        <h3 style="margin-top:20px;">Seek Sequence</h3>
+
+        <div class="sequence" id="seekSequence">
+            50 → 43 → 24 → 16 → 82 → 140 → 170 → 190
+        </div>
+    </section>
+
+
+    <!-- EXPLANATION -->
+    <section class="card">
+        <h2>How the Algorithm Works</h2>
+
+        <div class="explanation" id="explanation">
+            <strong>Shortest Seek Time First (SSTF)</strong><br>
+            SSTF selects the pending request that is closest to the current
+            disk-head position. This usually reduces unnecessary head movement.
+        </div>
+    </section>
+
+
+    <!-- VISUALIZATION -->
+    <section class="card">
+        <h2>Disk Movement Visualization</h2>
+
+        <div class="visual-container">
+            <svg id="movementSvg" viewBox="0 0 1000 300"></svg>
+        </div>
+
+        <div class="animation-controls">
+
+            <button class="primary" onclick="playAnimation()">
+                ▶ PLAY
+            </button>
+
+            <button class="secondary" onclick="stepAnimation()">
+                STEP →
+            </button>
+
+            <button class="secondary" onclick="resetAnimation()">
+                RESET ANIMATION
+            </button>
+
+            <div class="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="status" id="animationStatus">
+                Step 0
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- STEPS -->
+    <section class="card">
+        <h2>Step-by-Step Head Movements</h2>
+
+        <div class="steps" id="stepsContainer">
+        </div>
+
+        <div class="total">
+            Total Head Movement:
+            <span id="totalMovementBottom">208</span>
+            cylinders
+        </div>
+    </section>
+
+
+    <!-- COMPARISON -->
+    <section class="card">
+        <h2>Algorithm Comparison</h2>
+
+        <table class="comparison-table">
+            <thead>
+                <tr>
+                    <th>Algorithm</th>
+                    <th>Requests Served</th>
+                    <th>Total Head Movement</th>
+                    <th>Average Movement</th>
+                </tr>
+            </thead>
+
+            <tbody id="comparisonBody">
+                <tr>
+                    <td>FCFS</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+
+                <tr>
+                    <td>SSTF</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+
+                <tr>
+                    <td>LOOK</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+
+                <tr>
+                    <td>C-LOOK</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>-</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="winner" id="winner">
+            Run "Compare All Algorithms" to find the best algorithm.
+        </div>
+    </section>
+
+</div>
+
+<footer>
+    Disk Scheduling Visualizer • Self Learning Activity • Operating Systems
+</footer>
+
+
+<script>
+
+let currentResult = null;
+let animationIndex = 0;
+let animationTimer = null;
+
+
+/* =========================================================
+   INPUT VALIDATION
+========================================================= */
+
+function getInputData() {
+
+    const head = Number(document.getElementById("head").value);
+    const diskSize = Number(document.getElementById("diskSize").value);
+
+    const queueText =
+        document.getElementById("queue").value.trim();
+
+    if (!Number.isInteger(head) || head < 0) {
+        alert("Please enter a valid initial head position.");
+        return null;
+    }
+
+    if (!Number.isInteger(diskSize) || diskSize <= 1) {
+        alert("Please enter a valid disk size.");
+        return null;
+    }
+
+    if (head >= diskSize) {
+        alert("Head position must be smaller than disk size.");
+        return null;
+    }
+
+    if (!queueText) {
+        alert("Please enter the request queue.");
+        return null;
+    }
+
+    const queue = queueText
+        .split(",")
+        .map(x => Number(x.trim()));
+
+    if (queue.some(x => !Number.isInteger(x))) {
+        alert("Request queue contains an invalid value.");
+        return null;
+    }
+
+    if (queue.some(x => x < 0 || x >= diskSize)) {
+        alert("All requests must be between 0 and disk size - 1.");
+        return null;
+    }
+
+    return {
+        head,
+        queue,
+        diskSize,
+        direction: document.getElementById("direction").value
+    };
+}
+
+
+/* =========================================================
+   FCFS
+========================================================= */
+
+function fcfs(head, queue) {
+
+    const sequence = [head, ...queue];
+
+    return calculateResult(sequence, "FCFS");
+}
+
+
+/* =========================================================
+   SSTF
+========================================================= */
+
+function sstf(head, queue) {
+
+    let current = head;
+    let remaining = [...queue];
+
+    const sequence = [head];
+
+    while (remaining.length > 0) {
+
+        let closestIndex = 0;
+        let closestDistance =
+            Math.abs(current - remaining[0]);
+
+        for (let i = 1; i < remaining.length; i++) {
+
+            const distance =
+                Math.abs(current - remaining[i]);
+
+            if (distance < closestDistance) {
+
+                closestDistance = distance;
+                closestIndex = i;
+
+            }
+        }
+
+        current = remaining[closestIndex];
+
+        sequence.push(current);
+
+        remaining.splice(closestIndex, 1);
+    }
+
+    return calculateResult(sequence, "SSTF");
+}
+
+
+/* =========================================================
+   LOOK
+========================================================= */
+
+function look(head, queue, direction) {
+
+    const higher =
+        queue.filter(x => x >= head).sort((a,b) => a-b);
+
+    const lower =
+        queue.filter(x => x < head).sort((a,b) => a-b);
+
+    let sequence = [head];
+
+    if (direction === "right") {
+
+        sequence.push(...higher);
+        sequence.push(...lower.reverse());
+
+    } else {
+
+        sequence.push(...lower.reverse());
+        sequence.push(...higher);
+
+    }
+
+    return calculateResult(sequence, "LOOK");
+}
+
+
+/* =========================================================
+   C-LOOK
+========================================================= */
+
+function clook(head, queue, direction) {
+
+    const higher =
+        queue.filter(x => x >= head).sort((a,b) => a-b);
+
+    const lower =
+        queue.filter(x => x < head).sort((a,b) => a-b);
+
+    let sequence = [head];
+
+    if (direction === "right") {
+
+        sequence.push(...higher);
+        sequence.push(...lower);
+
+    } else {
+
+        sequence.push(...lower.reverse());
+        sequence.push(...higher.reverse());
+
+    }
+
+    return calculateResult(sequence, "C-LOOK");
+}
+
+
+/* =========================================================
+   CALCULATE MOVEMENT
+========================================================= */
+
+function calculateResult(sequence, algorithm) {
+
+    let total = 0;
+
+    const steps = [];
+
+    for (let i = 1; i < sequence.length; i++) {
+
+        const from = sequence[i - 1];
+        const to = sequence[i];
+
+        const movement = Math.abs(to - from);
+
+        total += movement;
+
+        steps.push({
+            from,
+            to,
+            movement,
+            cumulative: total
+        });
+    }
+
+    return {
+        algorithm,
+        sequence,
+        steps,
+        total,
+        average:
+            steps.length > 0
+                ? total / steps.length
+                : 0
+    };
+}
+
+
+/* =========================================================
+   RUN SELECTED ALGORITHM
+========================================================= */
+
+function runAlgorithm(data, algorithm) {
+
+    if (algorithm === "FCFS") {
+
+        return fcfs(data.head, data.queue);
+
+    }
+
+    if (algorithm === "SSTF") {
+
+        return sstf(data.head, data.queue);
+
+    }
+
+    if (algorithm === "LOOK") {
+
+        return look(
+            data.head,
+            data.queue,
+            data.direction
+        );
+
+    }
+
+    if (algorithm === "CLOOK") {
+
+        return clook(
+            data.head,
+            data.queue,
+            data.direction
+        );
+
+    }
+}
+
+
+/* =========================================================
+   START SIMULATION
+========================================================= */
+
+function startSimulation() {
+
+    const data = getInputData();
+
+    if (!data) return;
+
+    const algorithm =
+        document.getElementById("algorithm").value;
+
+    const result =
+        runAlgorithm(data, algorithm);
+
+    currentResult = result;
+
+    displayResult(result);
+
+    resetAnimation();
+
+    window.scrollTo({
+        top: document.querySelector(".container").offsetTop,
+        behavior: "smooth"
+    });
+}
+
+
+/* =========================================================
+   DISPLAY RESULT
+========================================================= */
+
+function displayResult(result) {
+
+    document.getElementById("outputAlgorithm")
+        .textContent = result.algorithm;
+
+    document.getElementById("requestsServed")
+        .textContent = result.steps.length;
+
+    document.getElementById("totalMovement")
+        .textContent =
+        result.total + " cyl";
+
+    document.getElementById("averageMovement")
+        .textContent =
+        result.average.toFixed(2);
+
+    document.getElementById("totalMovementBottom")
+        .textContent = result.total;
+
+    document.getElementById("seekSequence")
+        .textContent =
+        result.sequence.join(" → ");
+
+    displayExplanation(result.algorithm);
+
+    displaySteps(result);
+
+    drawVisualization(result);
+}
+
+
+/* =========================================================
+   ALGORITHM EXPLANATION
+========================================================= */
+
+function displayExplanation(algorithm) {
+
+    const box =
+        document.getElementById("explanation");
+
+    if (algorithm === "FCFS") {
+
+        box.innerHTML = `
+            <strong>First Come First Serve (FCFS)</strong><br>
+            FCFS serves disk requests in exactly the order
+            in which they arrive. It is simple and fair, but
+            it may cause large amounts of unnecessary head movement.
+        `;
+
+    }
+
+    else if (algorithm === "SSTF") {
+
+        box.innerHTML = `
+            <strong>Shortest Seek Time First (SSTF)</strong><br>
+            SSTF selects the pending request that is closest
+            to the current disk-head position. This can reduce
+            total head movement, although requests far away
+            may have to wait longer.
+        `;
+
+    }
+
+    else if (algorithm === "LOOK") {
+
+        box.innerHTML = `
+            <strong>LOOK</strong><br>
+            LOOK moves the disk head in the selected direction
+            and services requests along the way. When there are
+            no more requests in that direction, it reverses.
+            Unlike SCAN, it does not travel to the physical end
+            of the disk unless a request is present there.
+        `;
+
+    }
+
+    else {
+
+        box.innerHTML = `
+            <strong>C-LOOK (Circular LOOK)</strong><br>
+            C-LOOK services requests in one direction. When it
+            reaches the last request in that direction, it
+            jumps to the request at the opposite end and
+            continues in the same direction instead of reversing.
+        `;
+    }
+}
+
+
+/* =========================================================
+   STEP-BY-STEP DISPLAY
+========================================================= */
+
+function displaySteps(result) {
+
+    const container =
+        document.getElementById("stepsContainer");
+
+    container.innerHTML = "";
+
+    result.steps.forEach((step, index) => {
+
+        const div = document.createElement("div");
+
+        div.className = "step";
+
+        div.dataset.index = index;
+
+        div.innerHTML = `
+            <div class="step-number">
+                Step ${index + 1}
+            </div>
+
+            <div class="movement">
+                ${step.from} → ${step.to}
+            </div>
+
+            <div class="calculation">
+                |${step.from} - ${step.to}| =
+                <strong>${step.movement}</strong>
+                &nbsp;&nbsp;|&nbsp;&nbsp;
+                Cumulative = ${step.cumulative}
+            </div>
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+
+/* =========================================================
+   DISK VISUALIZATION
+========================================================= */
+
+function drawVisualization(result) {
+
+    const svg =
+        document.getElementById("movementSvg");
+
+    svg.innerHTML = "";
+
+    const width = 1000;
+    const height = 300;
+
+    const data = getInputData();
+
+    if (!data) return;
+
+    const max = data.diskSize - 1;
+
+    const x =
+        value =>
+        50 + (value / max) * 900;
+
+    /*
+       Base disk line
+    */
+
+    const baseLine =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "line"
+        );
+
+    baseLine.setAttribute("x1", 50);
+    baseLine.setAttribute("y1", 150);
+    baseLine.setAttribute("x2", 950);
+    baseLine.setAttribute("y2", 150);
+
+    baseLine.setAttribute("stroke", "#1f2937");
+    baseLine.setAttribute("stroke-width", "5");
+
+    svg.appendChild(baseLine);
+
+
+    /*
+       End labels
+    */
+
+    addSvgText(svg, 50, 125, "0");
+    addSvgText(svg, 950, 125, max, "end");
+
+
+    /*
+       Draw request points
+    */
+
+    const unique =
+        [...new Set(result.sequence)];
+
+    unique.forEach(value => {
+
+        const circle =
+            document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "circle"
+            );
+
+        circle.setAttribute("cx", x(value));
+        circle.setAttribute("cy", 150);
+        circle.setAttribute("r", 7);
+        circle.setAttribute("fill", "#ef4444");
+
+        svg.appendChild(circle);
+
+        addSvgText(
+            svg,
+            x(value),
+            180,
+            value,
+            "middle"
+        );
+    });
+
+
+    /*
+       Start head
+    */
+
+    const start =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle"
+        );
+
+    start.setAttribute(
+        "cx",
+        x(result.sequence[0])
+    );
+
+    start.setAttribute("cy", 150);
+    start.setAttribute("r", 10);
+
+    start.setAttribute("fill", "white");
+    start.setAttribute("stroke", "#16a34a");
+    start.setAttribute("stroke-width", "4");
+
+    svg.appendChild(start);
+
+
+    /*
+       Movement path
+    */
+
+    let points = "";
+
+    result.sequence.forEach((value, index) => {
+
+        const y =
+            80 + (index % 6) * 28;
+
+        points +=
+            `${x(value)},${y} `;
+
+    });
+
+    const polyline =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "polyline"
+        );
+
+    polyline.setAttribute(
+        "points",
+        points
+    );
+
+    polyline.setAttribute(
+        "fill",
+        "none"
+    );
+
+    polyline.setAttribute(
+        "stroke",
+        "#2563eb"
+    );
+
+    polyline.setAttribute(
+        "stroke-width",
+        "3"
+    );
+
+    polyline.setAttribute(
+        "stroke-linejoin",
+        "round"
+    );
+
+    polyline.setAttribute(
+        "stroke-linecap",
+        "round"
+    );
+
+    svg.appendChild(polyline);
+
+
+    /*
+       Animated head
+    */
+
+    const animatedHead =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle"
+        );
+
+    animatedHead.setAttribute(
+        "id",
+        "animatedHead"
+    );
+
+    animatedHead.setAttribute(
+        "cx",
+        x(result.sequence[0])
+    );
+
+    animatedHead.setAttribute(
+        "cy",
+        80
+    );
+
+    animatedHead.setAttribute(
+        "r",
+        9
+    );
+
+    animatedHead.setAttribute(
+        "fill",
+        "#16a34a"
+    );
+
+    svg.appendChild(animatedHead);
+}
+
+
+/* =========================================================
+   SVG TEXT
+========================================================= */
+
+function addSvgText(
+    svg,
+    x,
+    y,
+    text,
+    anchor = "start"
+) {
+
+    const label =
+        document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "text"
+        );
+
+    label.setAttribute("x", x);
+    label.setAttribute("y", y);
+
+    label.setAttribute(
+        "text-anchor",
+        anchor
+    );
+
+    label.setAttribute(
+        "font-size",
+        "13"
+    );
+
+    label.setAttribute(
+        "font-weight",
+        "bold"
+    );
+
+    label.setAttribute(
+        "fill",
+        "#1d4ed8"
+    );
+
+    label.textContent = text;
+
+    svg.appendChild(label);
+}
+
+
+/* =========================================================
+   ANIMATION
+========================================================= */
+
+function resetAnimation() {
+
+    if (animationTimer) {
+
+        clearTimeout(animationTimer);
+
+        animationTimer = null;
+    }
+
+    animationIndex = 0;
+
+    document
+        .querySelectorAll(".step")
+        .forEach(step =>
+            step.classList.remove("active")
+        );
+
+    updateProgress();
+
+    if (currentResult) {
+
+        const head =
+            document.getElementById("animatedHead");
+
+        if (head) {
+
+            const data = getInputData();
+
+            const max =
+                data.diskSize - 1;
+
+            const value =
+                currentResult.sequence[0];
+
+            const x =
+                50 + (value / max) * 900;
+
+            head.setAttribute("cx", x);
+            head.setAttribute("cy", 80);
+        }
+    }
+}
+
+
+/* =========================================================
+   STEP ANIMATION
+========================================================= */
+
+function stepAnimation() {
+
+    if (!currentResult) {
+
+        alert("Start a simulation first.");
+
+        return;
+    }
+
+    if (
+        animationIndex >=
+        currentResult.steps.length
+    ) {
+
+        animationIndex = 0;
+
+        resetAnimation();
+
+        return;
+    }
+
+    const step =
+        currentResult.steps[animationIndex];
+
+    const data =
+        getInputData();
+
+    const max =
+        data.diskSize - 1;
+
+    const x =
+        50 + (step.to / max) * 900;
+
+    const y =
+        80 + ((animationIndex + 1) % 6) * 28;
+
+    const head =
+        document.getElementById("animatedHead");
+
+    if (head) {
+
+        head.setAttribute("cx", x);
+        head.setAttribute("cy", y);
+    }
+
+    document
+        .querySelectorAll(".step")
+        .forEach((element, index) => {
+
+            element.classList.toggle(
+                "active",
+                index === animationIndex
+            );
+        });
+
+    animationIndex++;
+
+    updateProgress();
+
+    document.getElementById("animationStatus")
+        .textContent =
+        `Step ${animationIndex} of ${currentResult.steps.length}`;
+}
+
+
+/* =========================================================
+   PLAY ANIMATION
+========================================================= */
+
+function playAnimation() {
+
+    if (!currentResult) {
+
+        alert("Start a simulation first.");
+
+        return;
+    }
+
+    if (animationTimer) {
+
+        clearTimeout(animationTimer);
+
+        animationTimer = null;
+
+        return;
+    }
+
+    function next() {
+
+        if (
+            animationIndex >=
+            currentResult.steps.length
+        ) {
+
+            animationTimer = null;
+
+            return;
+        }
+
+        stepAnimation();
+
+        animationTimer =
+            setTimeout(next, 700);
+    }
+
+    next();
+}
+
+
+/* =========================================================
+   PROGRESS
+========================================================= */
+
+function updateProgress() {
+
+    if (!currentResult) return;
+
+    const total =
+        currentResult.steps.length;
+
+    const percentage =
+        total === 0
+            ? 0
+            : (animationIndex / total) * 100;
+
+    document.getElementById("progressBar")
+        .style.width =
+        percentage + "%";
+}
+
+
+/* =========================================================
+   COMPARE ALL
+========================================================= */
+
+function compareAlgorithms() {
+
+    const data = getInputData();
+
+    if (!data) return;
+
+    const algorithms = [
+        "FCFS",
+        "SSTF",
+        "LOOK",
+        "CLOOK"
+    ];
+
+    const results =
+        algorithms.map(
+            algorithm =>
+            runAlgorithm(data, algorithm)
+        );
+
+    const body =
+        document.getElementById("comparisonBody");
+
+    body.innerHTML = "";
+
+    let best =
+        results.reduce(
+            (a,b) =>
+            a.total < b.total ? a : b
+        );
+
+    results.forEach(result => {
+
+        const row =
+            document.createElement("tr");
+
+        if (result === best) {
+
+            row.className = "best";
+        }
+
+        row.innerHTML = `
+            <td>${result.algorithm}</td>
+            <td>${result.steps.length}</td>
+            <td>${result.total} cylinders</td>
+            <td>${result.average.toFixed(2)}</td>
+        `;
+
+        body.appendChild(row);
+    });
+
+    document.getElementById("winner")
+        .innerHTML =
+        `🏆 Best for this input:
+         <strong>${best.algorithm}</strong>
+         with ${best.total} cylinders of total head movement.`;
+
+}
+
+
+/* =========================================================
+   RESET PAGE
+========================================================= */
+
+function resetPage() {
+
+    if (animationTimer) {
+
+        clearTimeout(animationTimer);
+
+        animationTimer = null;
+    }
+
+    document.getElementById("head").value = 50;
+
+    document.getElementById("queue").value =
+        "82,170,43,140,24,16,190";
+
+    document.getElementById("diskSize").value = 200;
+
+    document.getElementById("algorithm").value =
+        "SSTF";
+
+    document.getElementById("direction").value =
+        "right";
+
+    document.getElementById("outputAlgorithm")
+        .textContent = "SSTF";
+
+    document.getElementById("requestsServed")
+        .textContent = "7";
+
+    document.getElementById("totalMovement")
+        .textContent = "208 cyl";
+
+    document.getElementById("averageMovement")
+        .textContent = "29.71";
+
+    document.getElementById("seekSequence")
+        .textContent =
+        "50 → 43 → 24 → 16 → 82 → 140 → 170 → 190";
+
+    document.getElementById("totalMovementBottom")
+        .textContent = "208";
+
+    displayExplanation("SSTF");
+
+    const result =
+        sstf(
+            50,
+            [82,170,43,140,24,16,190]
+        );
+
+    currentResult = result;
+
+    displaySteps(result);
+
+    drawVisualization(result);
+
+    resetAnimation();
+
+    document.getElementById("comparisonBody")
+        .innerHTML = `
+            <tr>
+                <td>FCFS</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>SSTF</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>LOOK</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+            <tr>
+                <td>C-LOOK</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+            </tr>
+        `;
+
+    document.getElementById("winner")
+        .textContent =
+        'Run "Compare All Algorithms" to find the best algorithm.';
+}
+
+
+/* =========================================================
+   INITIAL LOAD
+========================================================= */
+
+window.onload = function() {
+
+    const result =
+        sstf(
+            50,
+            [82,170,43,140,24,16,190]
+        );
+
+    currentResult = result;
+
+    displayResult(result);
+
+    resetAnimation();
+};
+
+</script>
+
+</body>
+</html>
