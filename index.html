@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Disk Scheduling Visualizer</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <header>
+        <h1>Disk Scheduling Visualizer</h1>
+        <p>Algorithms: SSTF, LOOK, C-LOOK</p>
+    </header>
+
+    <div class="container">
+
+        <section class="input-box">
+
+            <div class="input-group">
+                <label>Initial Head Position</label>
+                <input type="number" id="head" value="50">
+            </div>
+
+            <div class="input-group">
+                <label>Request Queue (comma separated)</label>
+                <input type="text" id="requests"
+                       value="82,170,43,140,24,16,190">
+            </div>
+
+            <div class="input-group">
+                <label>Disk Size (0 to n-1)</label>
+                <input type="number" id="diskSize" value="200">
+            </div>
+
+            <div class="input-group">
+                <label>Algorithm</label>
+                <select id="algorithm">
+                    <option value="SSTF">SSTF</option>
+                    <option value="LOOK">LOOK</option>
+                    <option value="CLOOK">C-LOOK</option>
+                </select>
+            </div>
+
+            <button id="startBtn">START</button>
+
+        </section>
+
+
+        <section class="output">
+
+            <h2>Output</h2>
+
+            <div class="result-cards">
+
+                <div class="card">
+                    <h3>Algorithm</h3>
+                    <p id="algorithmResult">-</p>
+                </div>
+
+                <div class="card sequence-card">
+                    <h3>Seek Sequence</h3>
+                    <p id="sequenceResult">-</p>
+                </div>
+
+                <div class="card">
+                    <h3>Total Seek Time</h3>
+                    <p id="seekTimeResult">-</p>
+                </div>
+
+                <div class="card">
+                    <h3>Total Head Movements</h3>
+                    <p id="movementResult">-</p>
+                </div>
+
+            </div>
+
+
+            <div class="visualization">
+
+                <h2>Disk Movement Visualization</h2>
+
+                <div class="disk-scale">
+                    <span>0</span>
+                    <span id="diskMax">199</span>
+                </div>
+
+                <div id="diskTrack">
+                </div>
+
+            </div>
+
+
+            <div class="steps">
+
+                <h2>Step-by-Step Head Movements</h2>
+
+                <p id="stepsResult">-</p>
+
+                <h3 id="totalText"></h3>
+
+            </div>
+
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
+
+</body>
+</html>

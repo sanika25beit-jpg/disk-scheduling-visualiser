@@ -1,0 +1,203 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    color: #222;
+}
+
+header {
+    background: #101827;
+    color: white;
+    text-align: center;
+    padding: 25px;
+}
+
+header h1 {
+    margin: 0;
+    font-size: 36px;
+}
+
+header p {
+    font-size: 20px;
+    margin-bottom: 0;
+}
+
+.container {
+    width: 98%;
+    margin: 20px auto;
+}
+
+.input-box {
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    gap: 20px;
+    align-items: end;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.input-group label {
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+
+input,
+select {
+    padding: 14px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 7px;
+}
+
+#startBtn {
+    padding: 14px;
+    background: #1769e0;
+    color: white;
+    border: none;
+    border-radius: 7px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#startBtn:hover {
+    background: #0d55bd;
+}
+
+.output {
+    margin-top: 25px;
+}
+
+.output > h2 {
+    color: #1769e0;
+}
+
+.result-cards {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr;
+    gap: 20px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    min-height: 110px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.12);
+}
+
+.card h3 {
+    margin-top: 0;
+}
+
+.card p {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+#algorithmResult {
+    color: green;
+}
+
+#seekTimeResult,
+#movementResult {
+    color: #1769e0;
+}
+
+.sequence-card p {
+    color: green;
+    font-size: 18px;
+}
+
+.visualization {
+    margin-top: 25px;
+    background: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 2px 7px rgba(0,0,0,0.12);
+}
+
+.visualization h2 {
+    text-align: center;
+}
+
+.disk-scale {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    color: #1769e0;
+    margin: 20px 20px 5px;
+}
+
+#diskTrack {
+    height: 300px;
+    margin: 0 20px;
+    position: relative;
+    border-top: 4px solid #222;
+}
+
+.disk-point {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: #d62828;
+    border-radius: 50%;
+    transform: translateX(-50%);
+}
+
+.disk-label {
+    position: absolute;
+    transform: translateX(-50%);
+    font-weight: bold;
+}
+
+.head-point {
+    width: 18px;
+    height: 18px;
+    background: green;
+    border: 3px solid white;
+    box-shadow: 0 0 0 2px green;
+}
+
+.steps {
+    margin-top: 25px;
+    padding: 25px;
+    background: #f5f3ff;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.steps h2 {
+    color: #6334a5;
+}
+
+#stepsResult {
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#totalText {
+    color: #6334a5;
+}
+
+@media (max-width: 900px) {
+
+    .input-box,
+    .result-cards {
+        grid-template-columns: 1fr;
+    }
+
+}
